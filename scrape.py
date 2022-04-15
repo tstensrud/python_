@@ -18,11 +18,16 @@ def writeToFile(input):
     except Exception as e:
         messagebox.showerror(title="File allready exist", message=e.__class__)
 
+def scrapeLinks():
+    pass
+
+def scrapeEmails():
+    pass
 
 def scraper():
     txtResult.delete(1.0, tkinter.END)
     write = writeToFileValue.get()
-
+    scrapeType = radioScrapeChoice.get()
     #check that URL starts with https://
     url = fldUrl.get()
     if ("https://" not in url):
@@ -32,8 +37,14 @@ def scraper():
     data = requests.get(url)
     soup = BeautifulSoup(data.text, 'html.parser')
     try:
-        for i in soup.find_all('a', attrs={'href': re.compile("^https://")}):
-            txtResult.insert(END, "- " + i.get('href') + "\n")
+        if(scrapeType == 1):
+            for i in soup.find_all('a', attrs={'href': re.compile("^https://")}):
+                txtResult.insert(END, "- " + i.get('href') + "\n")
+        elif(scrapeType == 2):
+            for i in soup.find_all('a', attrs={'href': re.compile("^mailto")}):
+                txtResult.insert(END, "- " + i.get('href') + "\n")
+        else:
+            messagebox.showinfo(title="Choose", message="Choose what to scrape")
     except Exception as e:
         txtResult.insert(1.0, e.__class__)
     
@@ -58,6 +69,13 @@ fldUrl.place(x= 50, y = 20)
 #button to initiate scrape
 btnUrl = tkinter.Button(text="Go", width="10", height="1", command=scraper)
 btnUrl.place(x=500, y=17)
+
+#radiobuttons
+radioScrapeChoice = tkinter.IntVar()
+radioBtnLinks = Radiobutton(frmMain, text="Scrape links", variable=radioScrapeChoice, value=1)
+radioBtnLinks.place(x=20, y=80)
+radioBtnEmails = Radiobutton(frmMain, text="Scrape emails", variable=radioScrapeChoice, value=2)
+radioBtnEmails.place(x=20, y=100)
 
 #write to file checkbox
 writeToFileValue = tkinter.IntVar()
