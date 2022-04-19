@@ -7,6 +7,9 @@ from tkinter import *
 from bs4 import BeautifulSoup
 
 imagesList= []
+searchHistoryLinks = []
+searchHistoryEmails = []
+searchHistoryImages = []
 
 def writeToFile(input, writeContent):
     fileName = fldUrl.get()
@@ -18,7 +21,7 @@ def writeToFile(input, writeContent):
     elif(writeContent == 3):
         fileNameContent = "images"
 
-    #filename is url without https://, e.g. "www.google.com.txt"
+    #filename is url without https://, e.g. "www.google.com.txt - links"
     try:
         file = open(fileName[8:] + " - " + fileNameContent + ".txt", "x")
         file.write(input)
@@ -26,6 +29,40 @@ def writeToFile(input, writeContent):
         messagebox.showinfo(title="File written", message="Written to file success!")
     except Exception as e:
         messagebox.showerror(title="File allready exist", message=e.__class__)
+
+def printSearchHistoryLinks():
+    if (len(searchHistoryLinks) == 0):
+        txtResult.delete(1.0, END)
+        txtResult.insert(1.0, "Search history is empty")
+        return
+    txtResult.delete(1.0, END)
+    for i in searchHistoryLinks:
+        txtResult.insert(1.0, i + "\n")
+    
+def printSearchHistoryEmails():
+    if (len(searchHistoryEmails) == 0):
+        txtResult.delete(1.0, END)
+        txtResult.insert(1.0, "Search history is empty")
+        return
+    txtResult.delete(1.0, END)
+    for i in searchHistoryEmails:
+        txtResult.insert(1.0, i + "\n")
+
+def printSearchHistoryImages():
+    if (len(searchHistoryImages) == 0):
+        txtResult.delete(1.0, END)
+        txtResult.insert(1.0, "Search history is empty")
+        return
+    txtResult.delete(1.0, END)
+    for i in searchHistoryImages:
+        txtResult.insert(1.0, i + "\n")
+
+def clearSearchHistory():
+    searchHistoryEmails.clear()
+    searchHistoryImages.clear()
+    searchHistoryLinks.clear()
+    txtResult.delete(1.0, END)
+    txtResult.insert(1.0, "Cleared.")
 
 def downloadImages():
     try:
@@ -40,6 +77,7 @@ def downloadImages():
             file = open(imageName[::-1], "wb")
             file.write(imageFile.content)
             file.close()
+        imagesList.clear()
     except Exception as e:
         messagebox.showerror(title="Could not download", message=e.__class__ )
     
@@ -66,14 +104,16 @@ def scraper():
 
     #scrape and print to text area
     #scrapeType 1=links, 2=emails, 3=images
-    
     if(scrapeType == 1):
+        searchHistoryLinks.append(fldUrl.get())
         for i in soup.find_all('a', attrs={'href': re.compile("^http")}):
             txtResult.insert(END, i.get('href') + "\n")
     elif(scrapeType == 2):
+        searchHistoryEmails.append(fldUrl.get())
         for i in soup.find_all('a', attrs={'href': re.compile("^mailto")}):
             txtResult.insert(END, i.get('href') + "\n") 
     elif(scrapeType == 3):
+        searchHistoryImages.append(fldUrl.get())
         imagesList.clear()
         for i in soup.find_all('img', attrs={'src': re.compile("^")}):
             imageUrl = i.get('src')
@@ -93,13 +133,28 @@ frmMain = tkinter.Tk()
 frmMain.title("Scrape")
 frmMain.geometry("700x700")
 
+#menubar
+menubar = Menu(frmMain)
+
+#search history menu
+menubarSearchHistory = Menu(menubar, tearoff=0)
+menubarSearchHistory.add_command(label="Links", command=printSearchHistoryLinks)
+menubarSearchHistory.add_command(label="Emails", command=printSearchHistoryEmails)
+menubarSearchHistory.add_command(label="Images", command=printSearchHistoryImages)
+menubarSearchHistory.add_command(label="Clear history", command=clearSearchHistory)
+menubar.add_cascade(label="Search history", menu=menubarSearchHistory)
+
+
+
+frmMain.config(menu=menubar)
+
 #URL label
 lblHeader = tkinter.Label(text="URL:")
 lblHeader.place(x=20, y=20)
 
 #field for URL-entry
 fldUrl = tkinter.Entry(width="70")
-fldUrl.insert(0, "https://www.structor.no")
+fldUrl.insert(0, "https://")
 fldUrl.place(x= 50, y = 20)
 
 #button to initiate scrape
@@ -108,7 +163,7 @@ btnUrl.place(x=500, y=17)
 
 #radiobuttons
 radioScrapeChoice = tkinter.IntVar()
-radioBtnLinks = Radiobutton(frmMain, text="Get links", variable=radioScrapeChoice, value=1)
+radioBtnLinks = Radiobutton(frmMain, text="Get all links", variable=radioScrapeChoice, value=1)
 radioBtnLinks.place(x=20, y=80)
 radioBtnEmails = Radiobutton(frmMain, text="Get emails", variable=radioScrapeChoice, value=2)
 radioBtnEmails.place(x=20, y=100)
